@@ -1,5 +1,7 @@
 import copy
-from collections import deque
+from collections import deque, defaultdict
+import math
+import heapq
 
 
 class FinalExam:
@@ -15,7 +17,110 @@ class FinalExam:
         for i in grid:
             lst.append(tuple(i))
 
-        return tuple(lst)
+        return hash(tuple(lst))
+
+    def leftDist(self, grid):
+
+        dist = len(grid)
+
+        rows = len(grid)
+        cols = len(grid[0])
+        for i in range(rows):
+
+            d = 0
+            encountered = False
+            for j in range(cols):
+                if not encountered and grid[i][j] > 0:
+                    encountered = True
+
+                if encountered and grid[i][j] > 0:
+                    d += 1
+
+                if encountered and grid[i][j] == -1:
+                    break
+
+            if d not in [0, 1]:
+                dist = min(dist, d)
+            # print(dist, i)
+
+        return dist
+
+    def rightDist(self, grid):
+
+        dist = len(grid)
+
+        rows = len(grid)
+        cols = len(grid[0])
+        for i in range(rows - 1, -1, -1):
+
+            d = 0
+            encountered = False
+            for j in range(cols):
+                if not encountered and grid[i][j] > 0:
+                    encountered = True
+
+                if encountered and grid[i][j] > 0:
+                    d += 1
+
+                if encountered and grid[i][j] == -1:
+                    break
+
+            if d not in [0, 1]:
+                dist = min(dist, d)
+
+        return dist
+
+    def topDist(self, grid):
+
+        dist = len(grid[0])
+
+        rows = len(grid)
+        cols = len(grid[0])
+
+        for i in range(cols):
+            d = 0
+            encountered = False
+
+            for j in range(rows):
+                if not encountered and grid[j][i] > 0:
+                    encountered = True
+
+                if encountered and grid[j][i] > 0:
+                    d += 1
+
+                if encountered and grid[j][i] == -1:
+                    break
+
+            if d not in [0, 1]:
+                dist = min(dist, d)
+
+        return dist
+
+    def bottomDist(self, grid):
+
+        dist = len(grid[0])
+
+        rows = len(grid)
+        cols = len(grid[0])
+
+        for i in range(cols):
+            d = 0
+            encountered = False
+
+            for j in range(rows - 1, -1, -1):
+                if not encountered and grid[j][i] > 0:
+                    encountered = True
+
+                if encountered and grid[j][i] > 0:
+                    d += 1
+
+                if encountered and grid[j][i] == -1:
+                    break
+
+            if d not in [0, 1]:
+                dist = min(dist, d)
+
+        return dist
 
     def moveUp(self, grid):
 
@@ -160,7 +265,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input1.txt", "r") as f:
+        with open("input3.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -270,6 +375,121 @@ class FinalExam:
         # print(answer)
         return answer
 
+    def performAction(self, grid, action=[]):
+        if type(action) == list:
+            newGrid = copy.deepcopy(grid)
+            for act in action:
+                newGrid = self.performAction(newGrid, act)
+
+            return newGrid
+        else:
+            if action == "UP":
+                newGrid = self.moveUp(grid)
+            elif action == "DOWN":
+                newGrid = self.moveDown(grid)
+            elif action == "LEFT":
+                newGrid = self.moveLeft(grid)
+            elif action == "RIGHT":
+                newGrid = self.moveRight(grid)
+            else:
+                newGrid = copy.deepcopy(grid)
+
+            return newGrid
+
+    def dijkstras(self):
+        if self.check_grid(self.grid):
+            return []
+
+        heap = []
+
+        heap.append((0, [], copy.deepcopy(self.grid)))
+
+        while heap:
+
+            elem = heapq.heappop(heap)
+
+            if self.check_grid(elem[2]):
+                return elem[1]
+
+            dmap = defaultdict(list)
+
+            leftDist = self.leftDist(elem[2])
+            dmap[leftDist].append("LEFT")
+
+            rightDist = self.rightDist(elem[2])
+            dmap[rightDist].append("RIGHT")
+
+            topDist = self.topDist(elem[2])
+            dmap[topDist].append("UP")
+
+            downDist = self.bottomDist(elem[2])
+            dmap[downDist].append("DOWN")
+
+            minD = min(dmap.keys())
+
+            for act in dmap[minD]:
+                moves = copy.deepcopy(elem[1])
+                actions = [act] * (minD - 1)
+
+                newGrid = self.performAction(elem[2], actions)
+
+                moves += actions
+                heapq.heappush(heap, (len(moves), moves, newGrid))
+
+    def printNonZeroCount(self, grid):
+        ctr = 0
+        for i in grid:
+            for j in i:
+                if j > 0:
+                    ctr += 1
+
+        return ctr
+
+    def greedy(self):
+        actions = []
+
+        grid = copy.deepcopy(self.grid)
+
+        ctr = 0
+
+        while not self.check_grid(grid):
+
+            ctr += 1
+            if ctr == 80:
+                print("TEST")
+
+            dmap = defaultdict(list)
+
+            leftDist = self.leftDist(grid)
+            dmap[leftDist].append("LEFT")
+
+            rightDist = self.rightDist(grid)
+            dmap[rightDist].append("RIGHT")
+
+            topDist = self.topDist(grid)
+            dmap[topDist].append("UP")
+
+            downDist = self.bottomDist(grid)
+            dmap[downDist].append("DOWN")
+
+            minD = min(dmap.keys())
+
+            action = dmap[minD][0]
+
+            acts = [action] * (minD)
+
+            newGrid = self.performAction(grid, acts)
+
+            if newGrid == grid:
+                print(self.printNonZeroCount(grid))
+                print("TEST")
+
+            grid = newGrid
+
+            actions += acts
+
+        return actions
+
     def printGrid(self):
         # print("INSIDE PRINT")
         for row in self.grid:
@@ -285,6 +505,8 @@ class FinalExam:
             self.load_grid()
             self.fill_empty_grid()
 
+        answer = self.greedy()
+        return answer
         # l = self.moveUp(self.grid)
 
         # self.printGrid(l)
@@ -377,10 +599,17 @@ class FinalExam:
 
         # self.printGrid()
 
-        answer = self.minimum_number_of_steps()
-        # # print(answer)
-        for ans in answer:
-            print(ans)
+        # answer = self.minimum_number_of_steps()
+        # # # print(answer)
+        # for ans in answer:
+        #     print(ans)
+
+        # leftDist = self.leftDist(self.grid)
+        # rightDist = self.rightDist(self.grid)
+        # topDist = self.topDist(self.grid)
+        # bottomDist = self.bottomDist(self.grid)
+
+        # print(leftDist, rightDist, topDist, bottomDist)
 
     # print(answer)
 
@@ -389,4 +618,4 @@ if __name__ == "__main__":
 
     fe = FinalExam()
 
-    fe.compute()
+    print(fe.compute())
