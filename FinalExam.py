@@ -2,6 +2,7 @@ import copy
 from collections import deque, defaultdict
 import math
 import heapq
+import random
 
 
 class FinalExam:
@@ -21,14 +22,14 @@ class FinalExam:
 
     def leftDist(self, grid):
 
-        dist = len(grid)
+        dist = math.inf
 
         rows = len(grid)
         cols = len(grid[0])
         for i in range(rows):
-
             d = 0
             encountered = False
+            rowDist = len(grid[0])
             for j in range(cols):
                 if not encountered and grid[i][j] > 0:
                     encountered = True
@@ -37,22 +38,23 @@ class FinalExam:
                     d += 1
 
                 if encountered and grid[i][j] == -1:
-                    break
+                    if d not in [0, 1]:
+                        rowDist = min(rowDist, d)
+                    d = 0
 
-            if d not in [0, 1]:
-                dist = min(dist, d)
-            # print(dist, i)
-
+            if d > 1:
+                rowDist = min(rowDist, d)
+            dist = min(dist, rowDist)
         return dist
 
     def rightDist(self, grid):
 
-        dist = len(grid)
+        dist = math.inf
 
         rows = len(grid)
         cols = len(grid[0])
         for i in range(rows - 1, -1, -1):
-
+            rowDist = len(grid[0])
             d = 0
             encountered = False
             for j in range(cols):
@@ -63,16 +65,19 @@ class FinalExam:
                     d += 1
 
                 if encountered and grid[i][j] == -1:
-                    break
+                    if d not in [0, 1]:
+                        rowDist = min(rowDist, d)
 
-            if d not in [0, 1]:
-                dist = min(dist, d)
+                    d = 0
+            if d > 1:
+                rowDist = min(rowDist, d)
+            dist = min(dist, rowDist)
 
         return dist
 
     def topDist(self, grid):
 
-        dist = len(grid[0])
+        dist = math.inf
 
         rows = len(grid)
         cols = len(grid[0])
@@ -80,7 +85,7 @@ class FinalExam:
         for i in range(cols):
             d = 0
             encountered = False
-
+            colDist = len(grid)
             for j in range(rows):
                 if not encountered and grid[j][i] > 0:
                     encountered = True
@@ -89,16 +94,21 @@ class FinalExam:
                     d += 1
 
                 if encountered and grid[j][i] == -1:
-                    break
+                    if d not in [0, 1]:
+                        colDist = min(colDist, d)
 
-            if d not in [0, 1]:
-                dist = min(dist, d)
+                    d = 0
+            if d > 1:
+                colDist = min(colDist, d)
+
+            # print(i, colDist)
+            dist = min(dist, colDist)
 
         return dist
 
     def bottomDist(self, grid):
 
-        dist = len(grid[0])
+        dist = math.inf
 
         rows = len(grid)
         cols = len(grid[0])
@@ -106,6 +116,7 @@ class FinalExam:
         for i in range(cols):
             d = 0
             encountered = False
+            colDist = len(grid)
 
             for j in range(rows - 1, -1, -1):
                 if not encountered and grid[j][i] > 0:
@@ -115,10 +126,14 @@ class FinalExam:
                     d += 1
 
                 if encountered and grid[j][i] == -1:
-                    break
+                    if d not in [0, 1]:
+                        colDist = min(colDist, d)
 
-            if d not in [0, 1]:
-                dist = min(dist, d)
+                    d = 0
+            if d > 1:
+                colDist = min(colDist, d)
+
+            dist = min(dist, colDist)
 
         return dist
 
@@ -265,7 +280,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input3.txt", "r") as f:
+        with open("input1.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -476,17 +491,21 @@ class FinalExam:
 
             action = dmap[minD][0]
 
-            acts = [action] * (minD)
+            acts = [action] * (minD - 1)
 
-            newGrid = self.performAction(grid, acts)
+            newGrid = copy.deepcopy(grid)
 
-            if newGrid == grid:
-                print(self.printNonZeroCount(grid))
-                print("TEST")
+            for a in acts:
+                newGrid = self.performAction(newGrid, a)
+
+                if newGrid == grid:
+                    print(self.printNonZeroCount(grid))
+                    print("TEST")
+                    break
+                else:
+                    actions.append(a)
 
             grid = newGrid
-
-            actions += acts
 
         return actions
 
@@ -505,113 +524,10 @@ class FinalExam:
             self.load_grid()
             self.fill_empty_grid()
 
+        # print(self.grid)
         answer = self.greedy()
+
         return answer
-        # l = self.moveUp(self.grid)
-
-        # self.printGrid(l)
-
-        # d = self.moveDown(l)
-        # l = self.moveUp(d)
-        # self.printGrid(l)
-
-        # self.printGrid(self.grid)
-        # l = self.moveDown(self.grid)
-        # # print(l)
-        # print("----------------")
-        # self.printGrid(l)
-        # m = self.moveDown(l)
-        # print("----------------")
-        # self.printGrid(m)
-        # print("----------------")
-        # m = self.moveRight(m)
-        # self.printGrid(m)
-        # print("----------------")
-        # n = self.moveRight(m)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveRight(m)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveDown(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveRight(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveDown(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveDown(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveDown(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveDown(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # n = self.moveLeft(n)
-        # self.printGrid(n)
-        # print("----------------")
-        # m = self.moveDown(l)m = self.moveDown(l)m = self.moveDown(l)
-
-        # print(m)
-        # n = self.moveLeft(m)
-        # print(n)
-
-        # n = self.moveUp(n)
-        # print(n)
-        # self.grid = n
-        # print(self.check_grid(n))
-        # print(self.printSum(n))
-
-        # self.grid = [
-        #     [0.5, 0.5, 0.5, 0.5, -1],
-        #     [0.5, 0.5, 0.5, -1, 0.5],
-        #     [0.5, 0.5, -1, 0.5, 0.5],
-        #     [0.5, -1, 0.5, 0.5, 0.5],
-        #     [0.5, 0.5, 0.5, 0.5, 0.5],
-        # ]
-
-        # self.grid = [[0.5, 0.5, 0.5], [0.5, -1, 0.5], [0.5, 0.5, 0.5]]
-
-        # print("LENGTH", len(self.grid))
-        # print("LENGTH 0", len(self.grid[0]))
-
-        # self.printGrid()
-
-        # answer = self.minimum_number_of_steps()
-        # # # print(answer)
-        # for ans in answer:
-        #     print(ans)
-
-        # leftDist = self.leftDist(self.grid)
-        # rightDist = self.rightDist(self.grid)
-        # topDist = self.topDist(self.grid)
-        # bottomDist = self.bottomDist(self.grid)
-
-        # print(leftDist, rightDist, topDist, bottomDist)
-
-    # print(answer)
 
 
 if __name__ == "__main__":
