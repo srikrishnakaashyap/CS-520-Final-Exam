@@ -124,7 +124,7 @@ class FinalExam:
                 if not encountered and grid[j][i] > 0:
                     encountered = True
 
-                if encountered and grid[j][i] > 0:
+                if encountered and grid[j][i] != -1:
                     d += 1
 
                 if encountered and grid[j][i] != -1:
@@ -282,7 +282,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input1.txt", "r") as f:
+        with open("input2.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -496,9 +496,6 @@ class FinalExam:
         while not self.check_grid(grid):
 
             ctr += 1
-            if ctr == 80:
-                print("TEST")
-
             dmap = defaultdict(list)
 
             leftDist = self.leftDist(grid)
@@ -515,14 +512,9 @@ class FinalExam:
 
             minD = min(dmap.keys())
 
-            if minD == math.inf:
-                print(self.printNonZeroCount(grid))
-                return self.changeGame(grid, actions)
-                # print("converged")
-
             action = dmap[minD][0]
 
-            acts = [action] * minD
+            acts = [action] * (minD)
 
             newGrid = copy.deepcopy(grid)
 
@@ -555,7 +547,7 @@ class FinalExam:
             self.load_grid()
             self.fill_empty_grid()
 
-        # print(self.grid)
+        print(self.grid)
         answer = self.greedy()
 
         # self.grid = [
