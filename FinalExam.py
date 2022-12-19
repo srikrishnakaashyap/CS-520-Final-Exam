@@ -29,7 +29,7 @@ class FinalExam:
         for i in range(rows):
             d = 0
             encountered = False
-            rowDist = len(grid[0])
+            rowDist = math.inf
             for j in range(cols):
                 if not encountered and grid[i][j] > 0:
                     encountered = True
@@ -54,7 +54,7 @@ class FinalExam:
         rows = len(grid)
         cols = len(grid[0])
         for i in range(rows - 1, -1, -1):
-            rowDist = len(grid[0])
+            rowDist = math.inf
             d = 0
             encountered = False
             for j in range(cols):
@@ -85,7 +85,7 @@ class FinalExam:
         for i in range(cols):
             d = 0
             encountered = False
-            colDist = len(grid)
+            colDist = math.inf
             for j in range(rows):
                 if not encountered and grid[j][i] > 0:
                     encountered = True
@@ -116,7 +116,7 @@ class FinalExam:
         for i in range(cols):
             d = 0
             encountered = False
-            colDist = len(grid)
+            colDist = math.inf
 
             for j in range(rows - 1, -1, -1):
                 if not encountered and grid[j][i] > 0:
@@ -280,7 +280,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input1.txt", "r") as f:
+        with open("input4.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -460,6 +460,10 @@ class FinalExam:
 
         return ctr
 
+    def bfs(self, source, destination, grid):
+
+        queue = [destination]
+
     def greedy(self):
         actions = []
 
@@ -488,6 +492,10 @@ class FinalExam:
             dmap[downDist].append("DOWN")
 
             minD = min(dmap.keys())
+
+            if minD == math.inf:
+                print(self.printNonZeroCount(grid))
+                print("converged")
 
             action = dmap[minD][0]
 
