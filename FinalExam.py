@@ -34,13 +34,14 @@ class FinalExam:
                 if not encountered and grid[i][j] > 0:
                     encountered = True
 
-                if encountered and grid[i][j] > 0:
+                if encountered and grid[i][j] != -1:
                     d += 1
 
                 if encountered and grid[i][j] == -1:
                     if d not in [0, 1]:
-                        rowDist = min(rowDist, d)
+                        rowDist = min(rowDist, d - 1)
                     d = 0
+                    encountered = False
 
             if d > 1:
                 rowDist = min(rowDist, d)
@@ -53,21 +54,22 @@ class FinalExam:
 
         rows = len(grid)
         cols = len(grid[0])
-        for i in range(rows - 1, -1, -1):
+        for i in range(rows):
             rowDist = math.inf
             d = 0
             encountered = False
-            for j in range(cols):
+            for j in range(cols - 1, -1, -1):
+
                 if not encountered and grid[i][j] > 0:
                     encountered = True
 
-                if encountered and grid[i][j] > 0:
+                if encountered and grid[i][j] != -1:
                     d += 1
 
                 if encountered and grid[i][j] == -1:
                     if d not in [0, 1]:
-                        rowDist = min(rowDist, d)
-
+                        rowDist = min(rowDist, d - 1)
+                    encountered = False
                     d = 0
             if d > 1:
                 rowDist = min(rowDist, d)
@@ -90,13 +92,13 @@ class FinalExam:
                 if not encountered and grid[j][i] > 0:
                     encountered = True
 
-                if encountered and grid[j][i] > 0:
+                if encountered and grid[j][i] != -1:
                     d += 1
 
                 if encountered and grid[j][i] == -1:
                     if d not in [0, 1]:
-                        colDist = min(colDist, d)
-
+                        colDist = min(colDist, d - 1)
+                    encountered = False
                     d = 0
             if d > 1:
                 colDist = min(colDist, d)
@@ -113,7 +115,7 @@ class FinalExam:
         rows = len(grid)
         cols = len(grid[0])
 
-        for i in range(cols):
+        for i in range(cols - 1, -1, -1):
             d = 0
             encountered = False
             colDist = math.inf
@@ -125,10 +127,10 @@ class FinalExam:
                 if encountered and grid[j][i] > 0:
                     d += 1
 
-                if encountered and grid[j][i] == -1:
+                if encountered and grid[j][i] != -1:
                     if d not in [0, 1]:
-                        colDist = min(colDist, d)
-
+                        colDist = min(colDist, d - 1)
+                    encountered = False
                     d = 0
             if d > 1:
                 colDist = min(colDist, d)
@@ -280,7 +282,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input4.txt", "r") as f:
+        with open("input1.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -411,46 +413,6 @@ class FinalExam:
 
             return newGrid
 
-    def dijkstras(self):
-        if self.check_grid(self.grid):
-            return []
-
-        heap = []
-
-        heap.append((0, [], copy.deepcopy(self.grid)))
-
-        while heap:
-
-            elem = heapq.heappop(heap)
-
-            if self.check_grid(elem[2]):
-                return elem[1]
-
-            dmap = defaultdict(list)
-
-            leftDist = self.leftDist(elem[2])
-            dmap[leftDist].append("LEFT")
-
-            rightDist = self.rightDist(elem[2])
-            dmap[rightDist].append("RIGHT")
-
-            topDist = self.topDist(elem[2])
-            dmap[topDist].append("UP")
-
-            downDist = self.bottomDist(elem[2])
-            dmap[downDist].append("DOWN")
-
-            minD = min(dmap.keys())
-
-            for act in dmap[minD]:
-                moves = copy.deepcopy(elem[1])
-                actions = [act] * (minD - 1)
-
-                newGrid = self.performAction(elem[2], actions)
-
-                moves += actions
-                heapq.heappush(heap, (len(moves), moves, newGrid))
-
     def printNonZeroCount(self, grid):
         ctr = 0
         for i in grid:
@@ -460,9 +422,69 @@ class FinalExam:
 
         return ctr
 
-    def bfs(self, source, destination, grid):
+    def bfs(self, destination, grid):
 
-        queue = [destination]
+        queue = deque()
+
+        queue.append((destination, 0))
+
+        visited = set()
+        visited.add(destination)
+
+        rows = [-1, 1, 0, 0]
+        cols = [0, 0, -1, 1]
+        path = [[-1 for i in range(len(grid[0]))] for j in range(len(grid))]
+        directions = ["DOWN", "UP", "RIGHT", "LEFT"]
+
+        while queue:
+            elem = queue.popleft()
+            row = elem[0][0]
+            col = elem[0][1]
+            for i in range(4):
+                newRow = row + rows[i]
+                newCol = col + cols[i]
+
+                if (
+                    0 <= newRow < len(grid)
+                    and 0 <= newCol < len(grid[0])
+                    and (newRow, newCol) not in visited
+                    and grid[newRow][newCol] != -1
+                ):
+                    visited.add((newRow, newCol))
+                    path[newRow][newCol] = (directions[i], elem[1] + 1)
+                    queue.append(((newRow, newCol), elem[1] + 1))
+
+        return path
+
+    def changeGame(self, grid, actions):
+
+        while True:
+            if self.check_grid(grid):
+                return actions
+
+            pathMap = {}
+
+            maxDist = 0
+
+            source = None
+            destination = None
+
+            for i in range(len(grid)):
+                for j in range(len(grid[0])):
+
+                    if grid[i][j] > 0:
+
+                        path = self.bfs((i, j), grid)
+
+                        pathMap[(i, j)] = path
+
+                        for k in range(len(grid)):
+                            for l in range(len(grid[0])):
+
+                                if k != i and l != j:
+                                    if grid[k][l] > 0:
+                                        if path[k][l][1] > maxDist:
+                                            maxDist = path[k][l][1]
 
     def greedy(self):
         actions = []
@@ -480,26 +502,27 @@ class FinalExam:
             dmap = defaultdict(list)
 
             leftDist = self.leftDist(grid)
-            dmap[leftDist].append("LEFT")
+            dmap[leftDist].append("RIGHT")
 
             rightDist = self.rightDist(grid)
-            dmap[rightDist].append("RIGHT")
+            dmap[rightDist].append("LEFT")
 
             topDist = self.topDist(grid)
-            dmap[topDist].append("UP")
+            dmap[topDist].append("DOWN")
 
             downDist = self.bottomDist(grid)
-            dmap[downDist].append("DOWN")
+            dmap[downDist].append("UP")
 
             minD = min(dmap.keys())
 
             if minD == math.inf:
                 print(self.printNonZeroCount(grid))
-                print("converged")
+                return self.changeGame(grid, actions)
+                # print("converged")
 
             action = dmap[minD][0]
 
-            acts = [action] * (minD - 1)
+            acts = [action] * minD
 
             newGrid = copy.deepcopy(grid)
 
@@ -535,7 +558,17 @@ class FinalExam:
         # print(self.grid)
         answer = self.greedy()
 
+        # self.grid = [
+        #     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        #     [-1, -1, -1, -1, 0, 0, 0, 0, 0, -1, -1, -1, -1],
+        #     [-1, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 1, -1],
+        #     [-1, -1, -1, -1, 0, 0, 0, 0, 1, -1, -1, -1, -1],
+        #     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        # ]
+
         return answer
+        # directions = self.bfs((1, 5), (2, 1), self.grid)
+        # self.printGrid(directions)
 
 
 if __name__ == "__main__":
