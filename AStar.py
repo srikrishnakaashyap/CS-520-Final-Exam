@@ -173,8 +173,6 @@ class AStar:
         return s
 
     def load_grid(self):
-        # self.grid = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, -1, 0, 0, 0, 0, 0]]
-        # self.openCells = 19
         self.grid = []
         self.openCells = 0
         with open("input1.txt", "r") as f:
@@ -236,7 +234,7 @@ class AStar:
 
             return newGrid
 
-    def printNonZeroCount(self, grid):
+    def getNonZeroCount(self, grid):
         ctr = 0
         for i in grid:
             for j in i:
@@ -266,7 +264,7 @@ class AStar:
         #     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
         # ]
 
-        print(len(answer))
+        # print(len(answer))
         return answer
 
     def bfs(self, destination, grid):
@@ -326,7 +324,7 @@ class AStar:
         if not self.distanceMatrix:
             self.fourMatrix(self.grid)
 
-        return self.distanceMatrix[p1[0]][p1[1]][p2[0]][p2[1]]
+        return self.distanceMatrix[p2[0]][p2[1]][p1[0]][p1[1]]
 
     def computeMaxDistance(self, grid):
         maxDist = 0
@@ -349,7 +347,11 @@ class AStar:
 
     def heuristic(self, grid, actions):
 
-        return (40 * self.computeMaxDistance(grid)) * (8 * self.printNonZeroCount(grid))
+        return (
+            (40 * self.computeMaxDistance(grid))
+            * (8 * self.getNonZeroCount(grid))
+            * len(actions)
+        )
 
     def astar(self):
 
@@ -359,20 +361,30 @@ class AStar:
 
         h = self.heuristic(grid, [])
 
-        heap.append((h, [], grid))
+        heap.append((h, self.getNonZeroCount(grid), [], grid))
 
         visited = set()
 
         visited.add(hash(self.convertToTuple(grid)))
+
+        answer = []
+        ctr = 0
         while heap:
             elem = heapq.heappop(heap)
             # print(elem)
+            ctr += 1
 
-            if self.check_grid(elem[2]):
-                return elem[1]
+            if self.check_grid(elem[-1]):
+                answer.append(elem[-2])
+                continue
+                # return elem[1]
 
-            actions = elem[1]
-            grid = elem[2]
+            if answer and ctr > 1000:
+                print(ctr)
+                break
+
+            actions = elem[-2]
+            grid = elem[-1]
             heu = elem[0]
 
             for act in self.actions:
@@ -393,13 +405,33 @@ class AStar:
 
                 if hash(self.convertToTuple(newGrid)) not in visited:
                     visited.add(hash(self.convertToTuple(newGrid)))
-                    heapq.heappush(heap, (newHeu, actions[:] + [act], newGrid))
+                    heapq.heappush(
+                        heap,
+                        (
+                            newHeu,
+                            self.getNonZeroCount(newGrid),
+                            actions[:] + [act],
+                            newGrid,
+                        ),
+                    )
 
-        return []
+        return answer
 
 
 if __name__ == "__main__":
 
     astar = AStar()
 
-    print(astar.compute())
+    answer = astar.compute()
+
+    a = math.inf
+    for i in answer:
+        # print(len(i))
+        a = min(a, len(i))
+
+    for i in answer:
+        if len(i) == a:
+            print(i)
+            print(len(i))
+
+    # print(a)
