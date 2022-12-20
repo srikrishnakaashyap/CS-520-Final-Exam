@@ -127,7 +127,7 @@ class FinalExam:
                 if encountered and grid[j][i] != -1:
                     d += 1
 
-                if encountered and grid[j][i] != -1:
+                if encountered and grid[j][i] == -1:
                     if d not in [0, 1]:
                         colDist = min(colDist, d - 1)
                     encountered = False
@@ -282,7 +282,7 @@ class FinalExam:
     def load_grid(self):
         self.grid = []
         self.openCells = 0
-        with open("input2.txt", "r") as f:
+        with open("input4.txt", "r") as f:
             reader = f.readlines()
             for r in reader:
                 row = []
@@ -486,6 +486,26 @@ class FinalExam:
                                         if path[k][l][1] > maxDist:
                                             maxDist = path[k][l][1]
 
+    def heuristic(self, grid, action):
+
+        newGrid = self.performAction(grid, action)
+
+        oldCount = self.printNonZeroCount(grid)
+        newCount = self.printNonZeroCount(newGrid)
+
+        heuristic = None
+
+        if action == "LEFT":
+            heuristic = self.rightDist(self.grid) / (oldCount - newCount + 1)
+        elif action == "RIGHT":
+            heuristic = self.leftDist(self.grid) / (oldCount - newCount + 1)
+        elif action == "UP":
+            heuristic = self.bottomDist(self.grid) / (oldCount - newCount + 1)
+        else:
+            heuristic = self.topDist(self.grid) / (oldCount - newCount + 1)
+
+        return heuristic
+
     def greedy(self):
         actions = []
 
@@ -493,42 +513,99 @@ class FinalExam:
 
         ctr = 0
 
+        visited = defaultdict(list)
+
+        action = None
         while not self.check_grid(grid):
 
             ctr += 1
             dmap = defaultdict(list)
 
-            leftDist = self.leftDist(grid)
-            dmap[leftDist].append("RIGHT")
+            if action != "LEFT":
+                leftDist = self.leftDist(grid)
+                dmap[leftDist].append("RIGHT")
 
-            rightDist = self.rightDist(grid)
-            dmap[rightDist].append("LEFT")
+            if action != "RIGHT":
+                rightDist = self.rightDist(grid)
+                dmap[rightDist].append("LEFT")
 
-            topDist = self.topDist(grid)
-            dmap[topDist].append("DOWN")
+            if action != "UP":
+                topDist = self.topDist(grid)
+                dmap[topDist].append("DOWN")
 
-            downDist = self.bottomDist(grid)
-            dmap[downDist].append("UP")
+            if action != "DOWN":
+                downDist = self.bottomDist(grid)
+                dmap[downDist].append("UP")
 
-            minD = min(dmap.keys())
+            dmap.pop(math.inf, None)
+
+            minD = max(dmap.keys())
 
             action = dmap[minD][0]
 
-            acts = [action] * (minD)
+            # newGrid = copy.deepcopy(grid)
+
+            act = [action] * (minD - 1)
 
             newGrid = copy.deepcopy(grid)
 
-            for a in acts:
-                newGrid = self.performAction(newGrid, a)
+            for a in act:
 
+                newGrid = self.performAction(grid, a)
                 if newGrid == grid:
-                    print(self.printNonZeroCount(grid))
-                    print("TEST")
-                    break
+                    print("SAME")
                 else:
-                    actions.append(a)
+                    actions.append(action)
 
             grid = newGrid
+
+            h = hash(self.convertToTuple(grid))
+            if h not in visited:
+                visited[h] = actions[:]
+            else:
+                print(visited[h], len(visited[h]))
+                print("VISITED")
+                print(self.printNonZeroCount(grid))
+
+        return actions
+
+    def optimal(self):
+        actions = []
+
+        grid = copy.deepcopy(self.grid)
+
+        action = None
+
+        heap = []
+        while self.check_grid(grid) is False:
+
+            hmap = defaultdict(list)
+
+            if action != "LEFT":
+                hmap[self.heuristic(grid, "RIGHT")].append("RIGHT")
+
+            if action != "RIGHT":
+                hmap[self.heuristic(grid, "LEFT")].append("LEFT")
+
+            if action != "UP":
+                hmap[self.heuristic(grid, "DOWN")].append("DOWN")
+
+            if action != "DOWN":
+                hmap[self.heuristic(grid, "UP")].append("UP")
+
+            minHeuristic = min(hmap.keys())
+            action = random.choice(hmap[minHeuristic])
+
+            newGrid = self.performAction(grid, action)
+
+            if newGrid == grid:
+                print("SAME")
+                print(self.bottomDist(grid))
+                print(self.printNonZeroCount(grid))
+            else:
+                actions.append(action)
+
+            grid = copy.deepcopy(newGrid)
 
         return actions
 
@@ -547,18 +624,22 @@ class FinalExam:
             self.load_grid()
             self.fill_empty_grid()
 
-        print(self.grid)
-        answer = self.greedy()
+        # print(self.grid)
+        answer = self.optimal()
 
         # self.grid = [
         #     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
         #     [-1, -1, -1, -1, 0, 0, 0, 0, 0, -1, -1, -1, -1],
-        #     [-1, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 1, -1],
+        #     [-1, 0, 0, 0, 0, 1, -1, 0, 1, 0, 0, 1, -1],
         #     [-1, -1, -1, -1, 0, 0, 0, 0, 1, -1, -1, -1, -1],
         #     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
         # ]
 
+        print(len(answer))
         return answer
+
+        topDist = self.bottomDist(self.grid)
+        print(topDist)
         # directions = self.bfs((1, 5), (2, 1), self.grid)
         # self.printGrid(directions)
 
