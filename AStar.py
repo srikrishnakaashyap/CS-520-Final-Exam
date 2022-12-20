@@ -11,6 +11,7 @@ class AStar:
         self.openCells = None
 
         self.actions = ["UP", "DOWN", "LEFT", "RIGHT"]
+        self.distanceMatrix = None
 
     def convertToTuple(self, grid):
         lst = []
@@ -249,6 +250,7 @@ class AStar:
             print("\t".join(map(str, row)))
 
     def compute(self):
+
         if self.grid == None:
             self.load_grid()
             self.fill_empty_grid()
@@ -267,8 +269,64 @@ class AStar:
         print(len(answer))
         return answer
 
+    def bfs(self, destination, grid):
+
+        queue = deque()
+
+        queue.append((destination, 0))
+
+        visited = set()
+        visited.add(destination)
+
+        rows = [-1, 1, 0, 0]
+        cols = [0, 0, -1, 1]
+        path = [[-1 for i in range(len(grid[0]))] for j in range(len(grid))]
+        directions = ["DOWN", "UP", "RIGHT", "LEFT"]
+
+        while queue:
+            elem = queue.popleft()
+            row = elem[0][0]
+            col = elem[0][1]
+            for i in range(4):
+                newRow = row + rows[i]
+                newCol = col + cols[i]
+
+                if (
+                    0 <= newRow < len(grid)
+                    and 0 <= newCol < len(grid[0])
+                    and (newRow, newCol) not in visited
+                    and grid[newRow][newCol] != -1
+                ):
+                    visited.add((newRow, newCol))
+                    path[newRow][newCol] = elem[1] + 1
+                    queue.append(((newRow, newCol), elem[1] + 1))
+
+        return path
+
+    def fourMatrix(self, grid):
+        movi = [
+            [
+                [[0 for i in range(len(grid[0]))] for j in range(len(grid))]
+                for k in range(len(grid[0]))
+            ]
+            for l in range(len(grid))
+        ]
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                path = self.bfs((i, j), grid)
+                for k in range(len(path)):
+                    for l in range(len(path[0])):
+                        movi[i][j][k][l] = path[k][l]
+
+        self.distanceMatrix = movi
+
     def computeDistance(self, p1, p2):
-        return abs(p2[1] - p1[1]) + abs(p2[0] - p1[0])
+
+        if not self.distanceMatrix:
+            self.fourMatrix(self.grid)
+
+        return self.distanceMatrix[p1[0]][p1[1]][p2[0]][p2[1]]
 
     def computeMaxDistance(self, grid):
         maxDist = 0
@@ -291,7 +349,7 @@ class AStar:
 
     def heuristic(self, grid, actions):
 
-        return (50 * self.computeMaxDistance(grid)) * (5 * self.printNonZeroCount(grid))
+        return (40 * self.computeMaxDistance(grid)) * (8 * self.printNonZeroCount(grid))
 
     def astar(self):
 
